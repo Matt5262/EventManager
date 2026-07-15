@@ -1,11 +1,10 @@
 package me.matt5262.eventManager.listeners;
 
 import me.matt5262.eventManager.EventManager;
+import me.matt5262.eventManager.commands.SpawnCommand;
 import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
-import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,6 +20,34 @@ public class GuiListener implements Listener {
 
     public GuiListener(EventManager plugin) {
         this.plugin = plugin;
+    }
+
+    public void openSetSpawnConf(Player player) {
+        SpawnMenuHolder holder = new SpawnMenuHolder();
+        Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eConfirm Set Spawn?"));
+        holder.setInventory(inv);
+
+        inv.setItem(12, ItemUtil.createGuiItem(
+                plugin,
+                Material.GREEN_STAINED_GLASS_PANE,
+                "&aSet Spawn",
+                "confirm_set_spawn"
+        ));
+        inv.setItem(14, ItemUtil.createGuiItem(
+                plugin,
+                Material.RED_STAINED_GLASS_PANE,
+                "&cCancel",
+                "cancel_set_spawn"
+        ));
+        inv.setItem(13, ItemUtil.createGuiItem(
+                plugin,
+                Material.GRASS_BLOCK,
+                "&eSet Spawn On This Location?",
+                "visual_item",
+                "&fSet the spawn point on &6" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ() + "&f?"
+        ));
+
+        player.openInventory(inv);
     }
 
     @EventHandler
@@ -49,8 +76,15 @@ public class GuiListener implements Listener {
 
                 switch (action) {
                     case "set_spawn":
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("set-spawn-success")));
-                        player.closeInventory();
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            openSetSpawnConf(player);
+                        });
+                        //player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("set-spawn-success")));
+                        break;
+                    case "cancel_set_spawn":
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            new SpawnCommand(plugin).openSpawnMenu(player);
+                        });
                         break;
                     default:
                         plugin.getLogger().warning("No GUI action defined for tag: " + action);

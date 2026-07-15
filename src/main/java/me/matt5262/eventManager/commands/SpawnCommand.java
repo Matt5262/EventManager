@@ -35,7 +35,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                 Material.GRASS_BLOCK,
                 "&aSet Spawn",
                 "set_spawn",
-                "&eSet the spawn point for &6" + player.getLocation().getWorld().getName() + "&6!"));
+                "&fSet the spawn point for the /spawn command!"));
 
         player.openInventory(inv);
     }

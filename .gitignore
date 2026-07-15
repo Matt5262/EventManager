@@ -25,3 +25,6 @@ out/
 # Automatically generated test server folders (if using run-paper or similar)
 /run/
 .run/
+
+# Other
+.gradle

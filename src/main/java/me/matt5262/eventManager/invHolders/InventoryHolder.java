@@ -1,4 +1,4 @@
-package me.matt5262.eventManager.utils;
+package me.matt5262.eventManager.invHolders;
 
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;

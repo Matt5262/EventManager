@@ -13,9 +13,4 @@ public final class EventManager extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
 
     }
-
-    @Override
-    public void onDisable() {
-
-    }
 }

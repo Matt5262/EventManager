@@ -28,3 +28,5 @@ out/
 
 # Other
 .gradle
+.build/
+build/

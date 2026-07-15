@@ -8,8 +8,11 @@ public final class EventManager extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
 
-        this.getCommand("spawn").setExecutor(new SpawnCommand(this));
+        SpawnCommand spawnCommand = new SpawnCommand(this);
+        this.getCommand("spawn").setExecutor(spawnCommand);
+        this.getCommand("spawn").setTabCompleter(spawnCommand);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
 
     }

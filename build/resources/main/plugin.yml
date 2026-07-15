@@ -5,11 +5,15 @@ main: me.matt5262.eventManager.EventManager
 api-version: '26.2'
 load: POSTWORLD
 
-authors: [ Matt_5262 ]
+authors: [Matt_5262]
 
 commands:
   Spawn:
-    description: Thingamajig
-    usage: /spawn
-    permission-message: &cNo permission!
+    description: Teleports you to spawn.
+    usage: /spawn [editor]
     aliases: []
+
+permissions:
+  eventmanager.admin.spawn:
+    description: Allows players to use the /spawn editor subcommand.
+    default: op

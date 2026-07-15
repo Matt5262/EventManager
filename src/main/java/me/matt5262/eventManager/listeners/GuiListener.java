@@ -49,7 +49,7 @@ public class GuiListener implements Listener {
 
                 switch (action) {
                     case "set_spawn":
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',"&a[!] You clicked the Set Spawn Here button!"));
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("set-spawn-success")));
                         player.closeInventory();
                         break;
                     default:

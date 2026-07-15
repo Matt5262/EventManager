@@ -1,0 +1,9 @@
+# ==========================================
+# EventManager Configuration File
+# ==========================================
+
+# Messages
+no-permission-message: "&cYou do not have permission to execute this command!"
+set-spawn-success: "&aSuccessfully set spawn!"
+commandsender-error: "&cOnly players can execute this command!"
+invalid-arguments-error: "&cInvalid argument(s)!"

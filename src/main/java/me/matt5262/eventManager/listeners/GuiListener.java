@@ -1,8 +1,9 @@
 package me.matt5262.eventManager.listeners;
 
 import me.matt5262.eventManager.EventManager;
-import me.matt5262.eventManager.invHolders.InventoryHolder;
+import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
+import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -25,9 +26,11 @@ public class GuiListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Inventory clickedInventory = event.getClickedInventory();
-
-        if (clickedInventory != null && clickedInventory.getHolder() instanceof InventoryHolder) {
+        if (event.getView().getTopInventory().getHolder() instanceof SpawnMenuHolder) {
             event.setCancelled(true);
+        }
+
+        if (clickedInventory != null) {
 
             ItemStack clickedItem = event.getCurrentItem();
             if (clickedItem == null || !clickedItem.hasItemMeta()) return;
@@ -46,7 +49,7 @@ public class GuiListener implements Listener {
 
                 switch (action) {
                     case "set_spawn":
-                        player.sendMessage("&a[!] You clicked the Set Spawn Here button!");
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',"&a[!] You clicked the Set Spawn Here button!"));
                         player.closeInventory();
                         break;
                     default:

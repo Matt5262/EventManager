@@ -3,7 +3,7 @@ package me.matt5262.eventManager.invHolders;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
-public class InventoryHolder implements org.bukkit.inventory.InventoryHolder {
+public class SpawnMenuHolder implements org.bukkit.inventory.InventoryHolder {
 
     private Inventory inv;
 

@@ -1,0 +1,15 @@
+name: EventManager
+version: '${version}'
+
+main: me.matt5262.eventManager.EventManager
+api-version: '26.2'
+load: POSTWORLD
+
+authors: [ Matt_5262 ]
+
+commands:
+  Spawn:
+    description: Thingamajig
+    usage: /spawn
+    permission-message: &cNo permission!
+    aliases: []

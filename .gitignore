@@ -1,0 +1,26 @@
+# Compiled Java class files
+*.class
+
+# Log files
+*.log
+
+# Blueprints/Package files
+*.jar
+*.war
+*.nar
+├── target/       # Maven build output
+└── build/        # Gradle build output
+
+# IDE specific files (IntelliJ IDEA)
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Gradle specific temporary files
+.gradle/
+/build/
+
+# Automatically generated test server folders (if using run-paper or similar)
+/run/

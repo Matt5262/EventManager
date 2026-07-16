@@ -1,15 +1,22 @@
 package me.matt5262.eventManager.utils;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import me.matt5262.eventManager.EventManager;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.profile.PlayerTextures;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 public class ItemUtil {
 
@@ -46,4 +53,35 @@ public class ItemUtil {
         }
         return item;
     }
+
+    public static ItemStack getCustomHead(EventManager plugin, String textureInput) {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) item.getItemMeta();
+
+        if (meta != null) {
+            try {
+                PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID());
+                PlayerTextures textures = profile.getTextures();
+
+                URL url;
+                if (textureInput.startsWith("http")) {
+                    url = new URL(textureInput);
+                }else {
+                    byte[] decoded = Base64.getDecoder().decode(textureInput);
+                    String json = new String(decoded);
+                    String urlString = json.substring(json.indexOf("http"), json.indexOf("\"", json.indexOf("http")));
+                    url = new URL(urlString);
+                }
+
+                textures.setSkin(url);
+                profile.setTextures(textures);
+                meta.setOwnerProfile(profile);
+                item.setItemMeta(meta);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to apply custom head texture " + e.getMessage());
+            }
+        }
+        return item;
+    }
+
 }

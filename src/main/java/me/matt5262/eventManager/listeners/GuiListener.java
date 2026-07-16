@@ -46,6 +46,12 @@ public class GuiListener implements Listener {
                 "visual_item",
                 "&fSet the spawn point on &6" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ() + "&f?"
         ));
+        inv.setItem(18, ItemUtil.createGuiItem(
+                plugin,
+                Material.PLAYER_HEAD,
+                "&eEdit",
+                "edit_set_spawn"
+        ));
 
         player.openInventory(inv);
     }

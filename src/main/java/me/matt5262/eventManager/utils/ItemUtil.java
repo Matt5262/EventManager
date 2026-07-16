@@ -22,9 +22,7 @@ public class ItemUtil {
 
     public static final String ACTION_KEY = "gui_action";
 
-    public static ItemStack createGuiItem(EventManager plugin, Material material, String displayName, String actionTag) {
-
-        ItemStack item = new ItemStack(material);
+    public static ItemStack createGuiItem(EventManager plugin, ItemStack item, String displayName, String actionTag) {
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
@@ -38,9 +36,9 @@ public class ItemUtil {
         return item;
     }
 
-    public static ItemStack createGuiItem(EventManager plugin, Material material, String displayName, String actionTag, String... lore) {
-        ItemStack item = createGuiItem(plugin, material, displayName, actionTag);
-        ItemMeta meta = item.getItemMeta();
+    public static ItemStack createGuiItem(EventManager plugin, ItemStack item, String displayName, String actionTag, String... lore) {
+        ItemStack createdItem = createGuiItem(plugin, item, displayName, actionTag);
+        ItemMeta meta = createdItem.getItemMeta();
 
         if (meta != null) {
             List<String> formattedLore = new ArrayList<>();
@@ -49,9 +47,17 @@ public class ItemUtil {
             }
 
             meta.setLore(formattedLore);
-            item.setItemMeta(meta);
+            createdItem.setItemMeta(meta);
         }
-        return item;
+        return createdItem;
+    }
+
+    public static ItemStack createGuiItem(EventManager plugin, Material material, String displayName, String actionTag) {
+        return createGuiItem(plugin, new ItemStack(material), displayName, actionTag);
+    }
+
+    public static ItemStack createGuiItem(EventManager plugin, Material material, String displayName, String actionTag, String... lore) {
+        return createGuiItem(plugin, new ItemStack(material), displayName, actionTag, lore);
     }
 
     public static ItemStack getCustomHead(EventManager plugin, String textureInput) {
@@ -60,13 +66,14 @@ public class ItemUtil {
 
         if (meta != null) {
             try {
-                PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID());
+
+                PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
                 PlayerTextures textures = profile.getTextures();
 
                 URL url;
                 if (textureInput.startsWith("http")) {
                     url = new URL(textureInput);
-                }else {
+                } else {
                     byte[] decoded = Base64.getDecoder().decode(textureInput);
                     String json = new String(decoded);
                     String urlString = json.substring(json.indexOf("http"), json.indexOf("\"", json.indexOf("http")));
@@ -75,13 +82,12 @@ public class ItemUtil {
 
                 textures.setSkin(url);
                 profile.setTextures(textures);
-                meta.setOwnerProfile(profile);
+                meta.setPlayerProfile(profile);
                 item.setItemMeta(meta);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to apply custom head texture " + e.getMessage());
+                plugin.getLogger().severe("Failed to apply custom head texture: " + e.getMessage());
             }
         }
         return item;
     }
-
 }

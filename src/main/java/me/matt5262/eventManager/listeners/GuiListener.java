@@ -42,15 +42,48 @@ public class GuiListener implements Listener {
         inv.setItem(13, ItemUtil.createGuiItem(
                 plugin,
                 Material.GRASS_BLOCK,
-                "&eSet Spawn On This Location?",
+                "&eConfirm Set Spawn",
                 "visual_item",
                 "&fSet the spawn point on &6" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ() + "&f?"
         ));
         inv.setItem(18, ItemUtil.createGuiItem(
                 plugin,
-                Material.PLAYER_HEAD,
+                ItemUtil.getCustomHead(plugin, "http://textures.minecraft.net/texture/db4898c14428dd2e4011d9be3760ec6bab521ae5651f6e20ad5341a0f5afce28"),
                 "&eEdit",
                 "edit_set_spawn"
+        ));
+
+        player.openInventory(inv);
+    }
+
+    public void openEditSetSpawn(Player player) {
+        SpawnMenuHolder holder = new SpawnMenuHolder();
+        Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eSet Spawn Settings"));
+        holder.setInventory(inv);
+
+        Boolean UsePreciseCoordinates = plugin.getConfig().getBoolean("use-precise-coordinates");
+        String UsePreciseCoordinatesMsg = "Use Precise Coordinates";
+
+        if (UsePreciseCoordinates) {
+            UsePreciseCoordinatesMsg = "&a" + UsePreciseCoordinatesMsg;
+        }else {
+            UsePreciseCoordinatesMsg = "&c" + UsePreciseCoordinatesMsg;
+        }
+
+        double x = player.getLocation().getX();
+        double y = player.getLocation().getY();
+        double z = player.getLocation().getZ();
+
+        String formattedCoords = String.format("%.2f, %.2f, %.2f", x, y, z);
+
+        inv.setItem(11, ItemUtil.createGuiItem(
+                plugin,
+                Material.ARROW,
+                UsePreciseCoordinatesMsg,
+                "toggle_use_precise_coordinates",
+                "&fEnabling this will use decimals.",
+                "&fThe following coordinates will be used:",
+                "&6" + formattedCoords
         ));
 
         player.openInventory(inv);
@@ -90,6 +123,11 @@ public class GuiListener implements Listener {
                     case "cancel_set_spawn":
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             new SpawnCommand(plugin).openSpawnMenu(player);
+                        });
+                        break;
+                    case "edit_set_spawn":
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            openEditSetSpawn(player);
                         });
                         break;
                     default:

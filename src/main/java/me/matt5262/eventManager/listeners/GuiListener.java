@@ -27,6 +27,15 @@ public class GuiListener implements Listener {
         Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eConfirm Set Spawn?"));
         holder.setInventory(inv);
 
+        boolean usePrecise = plugin.getConfig().getBoolean("use-precise-coordinates", false);
+        String displayCoords;
+
+        if (usePrecise) {
+            displayCoords = String.format("%.2f, %.2f, %.2f", player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
+        }else {
+            displayCoords = player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ();
+        }
+
         inv.setItem(12, ItemUtil.createGuiItem(
                 plugin,
                 Material.GREEN_STAINED_GLASS_PANE,
@@ -44,7 +53,10 @@ public class GuiListener implements Listener {
                 Material.GRASS_BLOCK,
                 "&eConfirm Set Spawn",
                 "visual_item",
-                "&fSet the spawn point on &6" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ() + "&f?"
+                "&fSet the spawn point on &6"
+                        + player.getLocation().getBlockX() + ", "
+                        + player.getLocation().getBlockY() + ", "
+                        + player.getLocation().getBlockZ() + "&f?"
         ));
         inv.setItem(18, ItemUtil.createGuiItem(
                 plugin,
@@ -61,29 +73,70 @@ public class GuiListener implements Listener {
         Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eSet Spawn Settings"));
         holder.setInventory(inv);
 
-        Boolean UsePreciseCoordinates = plugin.getConfig().getBoolean("use-precise-coordinates");
-        String UsePreciseCoordinatesMsg = "Use Precise Coordinates";
+        boolean usePrecise = plugin.getConfig().getBoolean("use-precise-coordinates", false);
 
-        if (UsePreciseCoordinates) {
-            UsePreciseCoordinatesMsg = "&a" + UsePreciseCoordinatesMsg;
-        }else {
-            UsePreciseCoordinatesMsg = "&c" + UsePreciseCoordinatesMsg;
+        String titleColor = usePrecise ? "&a" : "&c";
+
+        String previewCoords;
+        if (usePrecise) {
+            previewCoords = String.format("%.2f, %.2f, %.2f", player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
+        } else {
+            previewCoords = player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ();
         }
-
-        double x = player.getLocation().getX();
-        double y = player.getLocation().getY();
-        double z = player.getLocation().getZ();
-
-        String formattedCoords = String.format("%.2f, %.2f, %.2f", x, y, z);
 
         inv.setItem(11, ItemUtil.createGuiItem(
                 plugin,
                 Material.ARROW,
-                UsePreciseCoordinatesMsg,
+                titleColor + "Use Precise Coordinates",
                 "toggle_use_precise_coordinates",
                 "&fEnabling this will use decimals.",
                 "&fThe following coordinates will be used:",
-                "&6" + formattedCoords
+                "&6" + previewCoords
+        ));
+
+        inv.setItem(12, ItemUtil.createGuiItem(
+                plugin,
+                Material.COMPASS,
+                "to be assigned",
+                "toggle_use_precise_yaw",
+                "&fEnabling this will allow you to use a yaw,",
+                "&fthat is not 90, 180, 270 or 360 degrees.",
+                "&fThe following yaw will be used:",
+                "&6" + player.getLocation().getYaw() + "°"
+        ));
+
+        inv.setItem(13, ItemUtil.createGuiItem(
+                plugin,
+                ItemUtil.getCustomHead(plugin, "http://textures.minecraft.net/texture/1a03d1b41561e5c3577dd871cddb56aae5a2a23db349fa8f9f5b78d5f928191"),
+                "to be assigned",
+                "toggle_use_precise_pitch",
+                "&fEnabling this will allow you to use a pitch,",
+                "&fthat is not -90, 0 or 90 degrees.",
+                "&fThe following pitch will be used:",
+                "&6" + player.getLocation().getPitch() + "°"
+        ));
+
+        inv.setItem(14, ItemUtil.createGuiItem(
+                plugin,
+                Material.CLOCK,
+                "&eSet Wait Time",
+                "set_wait_time",
+                "&fCurrent wait time: &6" + plugin.getConfig().getInt("wait-time") + "s."
+        ));
+
+        inv.setItem(15, ItemUtil.createGuiItem(
+                plugin,
+                Material.BONE_MEAL,
+                "&eSet Delay",
+                "set_delay_time",
+                "&fCurrent delay time: &6" + plugin.getConfig().getInt("delay") + "s."
+        ));
+
+        inv.setItem(18, ItemUtil.createGuiItem(
+                plugin,
+                Material.BARRIER,
+                "&cBack",
+                "edit_set_spawn_back"
         ));
 
         player.openInventory(inv);
@@ -126,6 +179,21 @@ public class GuiListener implements Listener {
                         });
                         break;
                     case "edit_set_spawn":
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            openEditSetSpawn(player);
+                        });
+                        break;
+                    case "edit_set_spawn_back":
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            openSetSpawnConf(player);
+                        });
+                        break;
+                    case "toggle_use_precise_coordinates":
+                        boolean currentState = plugin.getConfig().getBoolean("use-precise-coordinates", false);
+                        plugin.getConfig().set("use-precise-coordinates", !currentState);
+
+                        plugin.getConfig().options().copyDefaults(true);
+                        plugin.saveConfig();
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             openEditSetSpawn(player);
                         });

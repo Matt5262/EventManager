@@ -10,3 +10,7 @@ invalid-arguments-error: "&cInvalid argument(s)!"
 
 # Set Spawn Defaults
 use-precise-coordinates: false
+use-precise-yaw: false
+use-precise-pitch: false
+wait-time: 5
+delay: 15

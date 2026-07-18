@@ -5,12 +5,9 @@ import me.matt5262.eventManager.commands.SpawnCommand;
 import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
 import org.bukkit.*;
-import org.bukkit.block.Sign;
-import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -227,12 +224,8 @@ public class GuiListener implements Listener {
                         Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     case "set_wait_time":
-                        player.closeInventory();
-                        openSignInput(player, "wait-time");
                         break;
                     case "set_delay_time":
-                        player.closeInventory();
-                        openSignInput(player, "delay");
                         break;
                     default:
                         plugin.getLogger().warning("No GUI action defined for tag: " + action);
@@ -241,63 +234,5 @@ public class GuiListener implements Listener {
             }
         }
 
-    }
-
-    private void openSignInput(Player player, String targetConfigKey) {
-        Location loc = player.getLocation().clone().add(0, 2, 0);
-        player.sendBlockChange(loc, Material.OAK_SIGN.createBlockData());
-
-        String label = targetConfigKey.equals("wait-time") ? "Wait Time" : "Delay Time";
-        player.sendSignChange(loc, new String[]{
-                "^^^^^^^^^^^^^^^",
-                "Enter " + label,
-                "in seconds",
-                ""
-        });
-
-        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
-        player.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, targetConfigKey);
-
-        // 🟢 FIX: Get the BlockState, cast it to a Sign, and pass the explicit view Side
-        if (loc.getBlock().getState() instanceof Sign sign) {
-            player.openSign(sign, Side.FRONT);
-        }
-    }
-
-    @EventHandler
-    public void onSignChange(SignChangeEvent event) {
-        Player player = event.getPlayer();
-        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
-
-        if (player.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING)) {
-            String targetConfigKey = player.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-            player.getPersistentDataContainer().remove(identityKey); // Clean up container state
-
-            Location loc = event.getBlock().getLocation();
-            player.sendBlockChange(loc, loc.getBlock().getBlockData());
-            event.setCancelled(true);
-
-            String inputLine = event.getLine(0);
-            if (inputLine == null || inputLine.trim().isEmpty()) {
-                player.sendMessage(ChatColor.RED + "Action canceled: input line was empty.");
-                Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
-                return;
-            }
-
-            try {
-                int seconds = Integer.parseInt(inputLine.trim());
-                if (seconds < 0) {
-                    player.sendMessage(ChatColor.RED + "Number must be a positive integer.");
-                } else {
-                    plugin.getConfig().set(targetConfigKey, seconds);
-                    plugin.saveConfig();
-                    player.sendMessage(ChatColor.GREEN + "Configuration updated successfully!");
-                }
-            } catch (NumberFormatException e) {
-                player.sendMessage(ChatColor.RED + "Invalid input! Please enter a valid whole number.");
-            }
-
-            Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
-        }
     }
 }

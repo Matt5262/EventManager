@@ -22,19 +22,35 @@ public class GuiListener implements Listener {
         this.plugin = plugin;
     }
 
+    private String getFormattedCoords(Location loc) {
+        if (plugin.getConfig().getBoolean("use-precise-coordinates", false)) {
+            return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
+        }
+        return loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ();
+    }
+
+    private String getFormattedYaw(Location loc) {
+        if (plugin.getConfig().getBoolean("use-precise-yaw", false)) {
+            return String.format("%.2f°", loc.getYaw());
+        }
+        long snappedYaw = Math.round(loc.getYaw() / 90.0) * 90;
+        if (snappedYaw == 270) snappedYaw = -90;
+        if (snappedYaw == -270) snappedYaw = 90;
+        if (snappedYaw == 360 || snappedYaw == -360) snappedYaw = 0;
+        return snappedYaw + "°";
+    }
+
+    private String getFormattedPitch(Location loc) {
+        if (plugin.getConfig().getBoolean("use-precise-pitch", false)) {
+            return String.format("%.2f°", loc.getPitch());
+        }
+        return (Math.round(loc.getPitch() / 90.0) * 90) + "°";
+    }
+
     public void openSetSpawnConf(Player player) {
         SpawnMenuHolder holder = new SpawnMenuHolder();
         Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eConfirm Set Spawn?"));
         holder.setInventory(inv);
-
-        boolean usePrecise = plugin.getConfig().getBoolean("use-precise-coordinates", false);
-        String displayCoords;
-
-        if (usePrecise) {
-            displayCoords = String.format("%.2f, %.2f, %.2f", player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
-        }else {
-            displayCoords = player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ();
-        }
 
         inv.setItem(12, ItemUtil.createGuiItem(
                 plugin,
@@ -53,7 +69,12 @@ public class GuiListener implements Listener {
                 Material.GRASS_BLOCK,
                 "&eConfirm Set Spawn",
                 "visual_item",
-                "&fSet the spawn point on &6" + displayCoords + "&f?"
+                "&fSet the spawn point on:",
+                "&fCoordinates: &6" + getFormattedCoords(player.getLocation()),
+                "&fYaw: &6" + getFormattedYaw(player.getLocation()),
+                "&fPitch: &6" + getFormattedPitch(player.getLocation()),
+                "&fWait time: &6" + plugin.getConfig().getInt("wait-time", 5),
+                "&fDelay: &6" + plugin.getConfig().getInt("delay", 15)
         ));
         inv.setItem(18, ItemUtil.createGuiItem(
                 plugin,
@@ -78,27 +99,6 @@ public class GuiListener implements Listener {
         String yawColor = usePreciseYaw ? "&a" : "&c";
         String pitchColor = usePrecisePitch ? "&a" : "&c";
 
-        String previewCoords;
-        if (usePreciseCoords) {
-            previewCoords = String.format("%.2f, %.2f, %.2f", player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ());
-        } else {
-            previewCoords = player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ();
-        }
-
-        String previewYaw;
-        if (usePreciseYaw) {
-            previewYaw = String.format("%.2f°", player.getLocation().getYaw());
-        }else {
-            previewYaw = Math.round(player.getLocation().getYaw()) + "°";
-        }
-
-        String previewPitch;
-        if (usePreciseYaw) {
-            previewPitch = String.format("%.2f°", player.getLocation().getPitch());
-        }else {
-            previewPitch = Math.round(player.getLocation().getPitch()) + "°";
-        }
-
         inv.setItem(11, ItemUtil.createGuiItem(
                 plugin,
                 Material.ARROW,
@@ -106,7 +106,7 @@ public class GuiListener implements Listener {
                 "toggle_use_precise_coordinates",
                 "&fEnabling this will use decimals.",
                 "&fThe following coordinates will be used:",
-                "&6" + previewCoords
+                "&6" + getFormattedCoords(player.getLocation())
         ));
 
         inv.setItem(12, ItemUtil.createGuiItem(
@@ -117,7 +117,7 @@ public class GuiListener implements Listener {
                 "&fEnabling this will allow you to use a yaw,",
                 "&fthat is not 90, 180, 270 or 360 degrees.",
                 "&fThe following yaw will be used:",
-                "&6" + previewYaw
+                "&6" + getFormattedYaw(player.getLocation())
         ));
 
         inv.setItem(13, ItemUtil.createGuiItem(
@@ -128,7 +128,7 @@ public class GuiListener implements Listener {
                 "&fEnabling this will allow you to use a pitch,",
                 "&fthat is not -90, 0 or 90 degrees.",
                 "&fThe following pitch will be used:",
-                "&6" + previewPitch
+                "&6" + getFormattedPitch(player.getLocation())
         ));
 
         inv.setItem(14, ItemUtil.createGuiItem(
@@ -186,7 +186,6 @@ public class GuiListener implements Listener {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             openSetSpawnConf(player);
                         });
-                        //player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("set-spawn-success")));
                         break;
                     case "cancel_set_spawn":
                         Bukkit.getScheduler().runTask(plugin, () -> {

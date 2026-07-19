@@ -8,6 +8,9 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.block.Sign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -228,6 +231,8 @@ public class GuiListener implements Listener {
                         openSignInput(player, "wait-time");
                         break;
                     case "set_delay_time":
+                        player.closeInventory();
+                        openSignInput(player, "delay");
                         break;
                     default:
                         plugin.getLogger().warning("No GUI action defined for tag: " + action);
@@ -238,63 +243,108 @@ public class GuiListener implements Listener {
 
     }
 
-    // 🟢 1. The Opening Trigger: Simply fires an outbound UI editor packet to the screen
     private void openSignInput(Player player, String targetConfigKey) {
-        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
-        player.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, targetConfigKey);
+        // Target exactly 2 blocks below the player's current standing position
+        Location loc = player.getLocation().clone().subtract(0, 2, 0);
 
-        // Construct an outbound Open Sign Editor packet pointed at a dummy coordinate (0, 0, 0)
-        com.comphenix.protocol.events.PacketContainer openSignPacket =
-                com.comphenix.protocol.ProtocolLibrary.getProtocolManager().createPacket(com.comphenix.protocol.PacketType.Play.Server.OPEN_SIGN_EDITOR);
+        // Cache the original block layer material (e.g., Stone, Dirt)
+        Material originalMaterial = loc.getBlock().getType();
 
-        // Target block coordinate location index
-        openSignPacket.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
+        // Solidify the sign in the world layer temporarily
+        loc.getBlock().setType(Material.OAK_SIGN);
 
-        // Is front side of sign (true)
-        openSignPacket.getBooleans().write(0, true);
+        if (loc.getBlock().getState() instanceof Sign sign) {
+            NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
+            NamespacedKey matKey = new NamespacedKey(plugin, "active_sign_original_block");
+            NamespacedKey locXKey = new NamespacedKey(plugin, "fake_sign_x");
+            NamespacedKey locYKey = new NamespacedKey(plugin, "fake_sign_y");
+            NamespacedKey locZKey = new NamespacedKey(plugin, "fake_sign_z");
 
-        try {
-            com.comphenix.protocol.ProtocolLibrary.getProtocolManager().sendServerPacket(player, openSignPacket);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to send virtual sign packet: " + e.getMessage());
+            player.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, targetConfigKey);
+            player.getPersistentDataContainer().set(matKey, PersistentDataType.STRING, originalMaterial.name());
+            player.getPersistentDataContainer().set(locXKey, PersistentDataType.INTEGER, loc.getBlockX());
+            player.getPersistentDataContainer().set(locYKey, PersistentDataType.INTEGER, loc.getBlockY());
+            player.getPersistentDataContainer().set(locZKey, PersistentDataType.INTEGER, loc.getBlockZ());
+
+            // 🟢 FIX: Set editable and clear any locked state using valid Bukkit/Paper API methods
+            sign.setWaxed(false);
+            sign.setEditable(true);
+            sign.update(true, false);
+
+            // Pop open the UI screen for the user
+            player.openSign(sign, Side.FRONT);
+
+            // Push helpful prompt guidelines layout directly onto the sign lines
+            String label = targetConfigKey.equals("wait-time") ? "Wait Time" : "Delay Time";
+            player.sendSignChange(loc, new String[]{
+                    "^^^^^^^^^^^^^^^",
+                    "Enter " + label,
+                    "in seconds",
+                    ""
+            });
         }
     }
 
-    // 🟢 2. The Text Receiver: Safely called directly from the ProtocolLib async thread context
-    public void handleVirtualSignInput(Player player, String[] lines) {
+    // 🟢 Fix 2: Captures the input from the nearby location, cleans up the block, and processes configs
+    @EventHandler
+    public void onSignChange(SignChangeEvent event) {
+        Player player = event.getPlayer();
         NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
 
         if (player.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING)) {
             String targetConfigKey = player.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-            player.getPersistentDataContainer().remove(identityKey); // Clean container state immediately
 
-            // Minecraft reads the first line text at index 0
-            String inputLine = lines[0];
+            NamespacedKey matKey = new NamespacedKey(plugin, "active_sign_original_block");
+            String originalMaterialName = player.getPersistentDataContainer().get(matKey, PersistentDataType.STRING);
 
-            // Re-sync with main server thread context before updating configurations or opening new GUI containers
-            org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                if (inputLine == null || inputLine.trim().isEmpty()) {
-                    player.sendMessage(org.bukkit.ChatColor.RED + "Action canceled: input line was empty.");
-                    openEditSetSpawn(player);
-                    return;
+            int x = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_x"), PersistentDataType.INTEGER, 0);
+            int y = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_y"), PersistentDataType.INTEGER, 0);
+            int z = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_z"), PersistentDataType.INTEGER, 0);
+
+            // Wipe metadata tracking states immediately
+            player.getPersistentDataContainer().remove(identityKey);
+            player.getPersistentDataContainer().remove(matKey);
+            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_x"));
+            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_y"));
+            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_z"));
+
+            // Cancel physical text rendering and restore the floor block perfectly
+            event.setCancelled(true);
+            Location originalLoc = new Location(player.getWorld(), x, y, z);
+
+            Material restoreMaterial = Material.AIR;
+            try {
+                if (originalMaterialName != null) {
+                    restoreMaterial = Material.valueOf(originalMaterialName);
                 }
+            } catch (IllegalArgumentException e) {
+                restoreMaterial = Material.DIRT;
+            }
+            originalLoc.getBlock().setType(restoreMaterial);
 
-                try {
-                    int seconds = Integer.parseInt(inputLine.trim());
-                    if (seconds < 0) {
-                        player.sendMessage(org.bukkit.ChatColor.RED + "Number must be a positive integer.");
-                    } else {
-                        plugin.getConfig().set(targetConfigKey, seconds);
-                        plugin.saveConfig();
-                        player.sendMessage(org.bukkit.ChatColor.GREEN + "Configuration updated successfully!");
-                    }
-                } catch (NumberFormatException e) {
-                    player.sendMessage(org.bukkit.ChatColor.RED + "Invalid input! Please enter a valid whole number.");
+            // Process text input values
+            String inputLine = event.getLine(0);
+            if (inputLine == null || inputLine.trim().isEmpty()) {
+                player.sendMessage(ChatColor.RED + "Action canceled: input line was empty.");
+                Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
+                return;
+            }
+
+            try {
+                int seconds = Integer.parseInt(inputLine.trim());
+                if (seconds < 0) {
+                    player.sendMessage(ChatColor.RED + "Number must be a positive integer.");
+                } else {
+                    plugin.getConfig().set(targetConfigKey, seconds);
+                    plugin.saveConfig();
+                    player.sendMessage(ChatColor.GREEN + "Configuration updated successfully!");
                 }
+            } catch (NumberFormatException e) {
+                player.sendMessage(ChatColor.RED + "Invalid input! Please enter a valid whole number.");
+            }
 
-                // Safely bring player back into settings menu view window
-                openEditSetSpawn(player);
-            });
+            // Return the player back to the main configurations GUI menu panel
+            Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
         }
     }
 }

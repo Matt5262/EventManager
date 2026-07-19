@@ -10,6 +10,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
 }
 
 java {

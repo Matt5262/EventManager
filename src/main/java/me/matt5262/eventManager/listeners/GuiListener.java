@@ -224,6 +224,8 @@ public class GuiListener implements Listener {
                         Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     case "set_wait_time":
+                        player.closeInventory();
+                        openSignInput(player, "wait-time");
                         break;
                     case "set_delay_time":
                         break;
@@ -234,5 +236,65 @@ public class GuiListener implements Listener {
             }
         }
 
+    }
+
+    // 🟢 1. The Opening Trigger: Simply fires an outbound UI editor packet to the screen
+    private void openSignInput(Player player, String targetConfigKey) {
+        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
+        player.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, targetConfigKey);
+
+        // Construct an outbound Open Sign Editor packet pointed at a dummy coordinate (0, 0, 0)
+        com.comphenix.protocol.events.PacketContainer openSignPacket =
+                com.comphenix.protocol.ProtocolLibrary.getProtocolManager().createPacket(com.comphenix.protocol.PacketType.Play.Server.OPEN_SIGN_EDITOR);
+
+        // Target block coordinate location index
+        openSignPacket.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
+
+        // Is front side of sign (true)
+        openSignPacket.getBooleans().write(0, true);
+
+        try {
+            com.comphenix.protocol.ProtocolLibrary.getProtocolManager().sendServerPacket(player, openSignPacket);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to send virtual sign packet: " + e.getMessage());
+        }
+    }
+
+    // 🟢 2. The Text Receiver: Safely called directly from the ProtocolLib async thread context
+    public void handleVirtualSignInput(Player player, String[] lines) {
+        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
+
+        if (player.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING)) {
+            String targetConfigKey = player.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+            player.getPersistentDataContainer().remove(identityKey); // Clean container state immediately
+
+            // Minecraft reads the first line text at index 0
+            String inputLine = lines[0];
+
+            // Re-sync with main server thread context before updating configurations or opening new GUI containers
+            org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                if (inputLine == null || inputLine.trim().isEmpty()) {
+                    player.sendMessage(org.bukkit.ChatColor.RED + "Action canceled: input line was empty.");
+                    openEditSetSpawn(player);
+                    return;
+                }
+
+                try {
+                    int seconds = Integer.parseInt(inputLine.trim());
+                    if (seconds < 0) {
+                        player.sendMessage(org.bukkit.ChatColor.RED + "Number must be a positive integer.");
+                    } else {
+                        plugin.getConfig().set(targetConfigKey, seconds);
+                        plugin.saveConfig();
+                        player.sendMessage(org.bukkit.ChatColor.GREEN + "Configuration updated successfully!");
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(org.bukkit.ChatColor.RED + "Invalid input! Please enter a valid whole number.");
+                }
+
+                // Safely bring player back into settings menu view window
+                openEditSetSpawn(player);
+            });
+        }
     }
 }

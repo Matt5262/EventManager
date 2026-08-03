@@ -2,11 +2,13 @@ package me.matt5262.eventManager;
 
 import me.matt5262.eventManager.commands.SpawnCommand;
 import me.matt5262.eventManager.listeners.GuiListener;
+import me.matt5262.eventManager.utils.SpawnFileManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EventManager extends JavaPlugin {
 
     private GuiListener guiListener;
+    private SpawnFileManager spawnFileManager;
 
     @Override
     public void onEnable() {
@@ -19,5 +21,9 @@ public final class EventManager extends JavaPlugin {
         this.getCommand("spawn").setTabCompleter(spawnCommand);
         getServer().getPluginManager().registerEvents(guiListener, this);
 
+    }
+
+    public SpawnFileManager getSpawnFileManager() {
+        return spawnFileManager;
     }
 }

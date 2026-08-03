@@ -8,9 +8,6 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.block.Sign;
-import org.bukkit.block.sign.Side;
-import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -26,14 +23,14 @@ public class GuiListener implements Listener {
     }
 
     private String getFormattedCoords(Location loc) {
-        if (plugin.getConfig().getBoolean("use-precise-coordinates", false)) {
+        if (plugin.getSpawnFileManager().getData().getBoolean("use-precise-coordinates", false)) {
             return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
         }
         return loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ();
     }
 
     private String getFormattedYaw(Location loc) {
-        if (plugin.getConfig().getBoolean("use-precise-yaw", false)) {
+        if (plugin.getSpawnFileManager().getData().getBoolean("use-precise-yaw", false)) {
             return String.format("%.2f°", loc.getYaw());
         }
         long snappedYaw = Math.round(loc.getYaw() / 90.0) * 90;
@@ -44,7 +41,7 @@ public class GuiListener implements Listener {
     }
 
     private String getFormattedPitch(Location loc) {
-        if (plugin.getConfig().getBoolean("use-precise-pitch", false)) {
+        if (plugin.getSpawnFileManager().getData().getBoolean("use-precise-pitch", false)) {
             return String.format("%.2f°", loc.getPitch());
         }
         return (Math.round(loc.getPitch() / 90.0) * 90) + "°";
@@ -76,8 +73,8 @@ public class GuiListener implements Listener {
                 "&fCoordinates: &6" + getFormattedCoords(player.getLocation()),
                 "&fYaw: &6" + getFormattedYaw(player.getLocation()),
                 "&fPitch: &6" + getFormattedPitch(player.getLocation()),
-                "&fWait time: &6" + plugin.getConfig().getInt("wait-time", 5),
-                "&fDelay: &6" + plugin.getConfig().getInt("delay", 15)
+                "&fWait time: &6" + plugin.getSpawnFileManager().getData().getInt("wait-time", 5),
+                "&fDelay: &6" + plugin.getSpawnFileManager().getData().getInt("delay", 15)
         ));
         inv.setItem(18, ItemUtil.createGuiItem(
                 plugin,
@@ -94,9 +91,9 @@ public class GuiListener implements Listener {
         Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&', "&eSet Spawn Settings"));
         holder.setInventory(inv);
 
-        boolean usePreciseCoords = plugin.getConfig().getBoolean("use-precise-coordinates", false);
-        boolean usePreciseYaw = plugin.getConfig().getBoolean("use-precise-yaw", false);
-        boolean usePrecisePitch = plugin.getConfig().getBoolean("use-precise-pitch", false);
+        boolean usePreciseCoords = plugin.getSpawnFileManager().getData().getBoolean("use-precise-coordinates", false);
+        boolean usePreciseYaw = plugin.getSpawnFileManager().getData().getBoolean("use-precise-yaw", false);
+        boolean usePrecisePitch = plugin.getSpawnFileManager().getData().getBoolean("use-precise-pitch", false);
 
         String coordColor = usePreciseCoords ? "&a" : "&c";
         String yawColor = usePreciseYaw ? "&a" : "&c";
@@ -206,33 +203,26 @@ public class GuiListener implements Listener {
                         });
                         break;
                     case "toggle_use_precise_coordinates":
-                        boolean coordState = plugin.getConfig().getBoolean("use-precise-coordinates", false);
-                        plugin.getConfig().set("use-precise-coordinates", !coordState);
-                        plugin.getConfig().options().copyDefaults(true);
-                        plugin.saveConfig();
+                        boolean coordState = plugin.getSpawnFileManager().getData().getBoolean("use-precise-coordinates", false);
+                        plugin.getSpawnFileManager().getData().set("use-precise-coordinates", !coordState);
+                        plugin.getSpawnFileManager().saveData();
                         Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     case "toggle_use_precise_yaw":
-                        boolean yawState = plugin.getConfig().getBoolean("use-precise-yaw", false);
-                        plugin.getConfig().set("use-precise-yaw", !yawState);
-                        plugin.getConfig().options().copyDefaults(true);
-                        plugin.saveConfig();
+                        boolean yawState = plugin.getSpawnFileManager().getData().getBoolean("use-precise-yaw", false);
+                        plugin.getSpawnFileManager().getData().set("use-precise-yaw", !yawState);
+                        plugin.getSpawnFileManager().saveData();
                         Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     case "toggle_use_precise_pitch":
-                        boolean pitchState = plugin.getConfig().getBoolean("use-precise-pitch", false);
-                        plugin.getConfig().set("use-precise-pitch", !pitchState);
-                        plugin.getConfig().options().copyDefaults(true);
-                        plugin.saveConfig();
+                        boolean pitchState = plugin.getSpawnFileManager().getData().getBoolean("use-precise-pitch", false);
+                        plugin.getSpawnFileManager().getData().set("use-precise-pitch", !pitchState);
+                        plugin.getSpawnFileManager().saveData();
                         Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     case "set_wait_time":
-                        player.closeInventory();
-                        openSignInput(player, "wait-time");
                         break;
                     case "set_delay_time":
-                        player.closeInventory();
-                        openSignInput(player, "delay");
                         break;
                     case "visual_item":
                         break;
@@ -243,110 +233,5 @@ public class GuiListener implements Listener {
             }
         }
 
-    }
-
-    private void openSignInput(Player player, String targetConfigKey) {
-        // Target exactly 2 blocks below the player's current standing position
-        Location loc = player.getLocation().clone().subtract(0, 2, 0);
-
-        // Cache the original block layer material (e.g., Stone, Dirt)
-        Material originalMaterial = loc.getBlock().getType();
-
-        // Solidify the sign in the world layer temporarily
-        loc.getBlock().setType(Material.OAK_SIGN);
-
-        if (loc.getBlock().getState() instanceof Sign sign) {
-            NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
-            NamespacedKey matKey = new NamespacedKey(plugin, "active_sign_original_block");
-            NamespacedKey locXKey = new NamespacedKey(plugin, "fake_sign_x");
-            NamespacedKey locYKey = new NamespacedKey(plugin, "fake_sign_y");
-            NamespacedKey locZKey = new NamespacedKey(plugin, "fake_sign_z");
-
-            player.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, targetConfigKey);
-            player.getPersistentDataContainer().set(matKey, PersistentDataType.STRING, originalMaterial.name());
-            player.getPersistentDataContainer().set(locXKey, PersistentDataType.INTEGER, loc.getBlockX());
-            player.getPersistentDataContainer().set(locYKey, PersistentDataType.INTEGER, loc.getBlockY());
-            player.getPersistentDataContainer().set(locZKey, PersistentDataType.INTEGER, loc.getBlockZ());
-
-            // 🟢 FIX: Set editable and clear any locked state using valid Bukkit/Paper API methods
-            sign.setWaxed(false);
-            sign.setEditable(true);
-            sign.update(true, false);
-
-            // Pop open the UI screen for the user
-            player.openSign(sign, Side.FRONT);
-
-            // Push helpful prompt guidelines layout directly onto the sign lines
-            String label = targetConfigKey.equals("wait-time") ? "Wait Time" : "Delay Time";
-            player.sendSignChange(loc, new String[]{
-                    "^^^^^^^^^^^^^^^",
-                    "Enter " + label,
-                    "in seconds",
-                    ""
-            });
-        }
-    }
-
-    // 🟢 Fix 2: Captures the input from the nearby location, cleans up the block, and processes configs
-    @EventHandler
-    public void onSignChange(SignChangeEvent event) {
-        Player player = event.getPlayer();
-        NamespacedKey identityKey = new NamespacedKey(plugin, "active_sign_target");
-
-        if (player.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING)) {
-            String targetConfigKey = player.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-
-            NamespacedKey matKey = new NamespacedKey(plugin, "active_sign_original_block");
-            String originalMaterialName = player.getPersistentDataContainer().get(matKey, PersistentDataType.STRING);
-
-            int x = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_x"), PersistentDataType.INTEGER, 0);
-            int y = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_y"), PersistentDataType.INTEGER, 0);
-            int z = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "fake_sign_z"), PersistentDataType.INTEGER, 0);
-
-            // Wipe metadata tracking states immediately
-            player.getPersistentDataContainer().remove(identityKey);
-            player.getPersistentDataContainer().remove(matKey);
-            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_x"));
-            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_y"));
-            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "fake_sign_z"));
-
-            // Cancel physical text rendering and restore the floor block perfectly
-            event.setCancelled(true);
-            Location originalLoc = new Location(player.getWorld(), x, y, z);
-
-            Material restoreMaterial = Material.AIR;
-            try {
-                if (originalMaterialName != null) {
-                    restoreMaterial = Material.valueOf(originalMaterialName);
-                }
-            } catch (IllegalArgumentException e) {
-                restoreMaterial = Material.DIRT;
-            }
-            originalLoc.getBlock().setType(restoreMaterial);
-
-            // Process text input values
-            String inputLine = event.getLine(0);
-            if (inputLine == null || inputLine.trim().isEmpty()) {
-                player.sendMessage(ChatColor.RED + "Action canceled: input line was empty.");
-                Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
-                return;
-            }
-
-            try {
-                int seconds = Integer.parseInt(inputLine.trim());
-                if (seconds < 0) {
-                    player.sendMessage(ChatColor.RED + "Number must be a positive integer.");
-                } else {
-                    plugin.getConfig().set(targetConfigKey, seconds);
-                    plugin.saveConfig();
-                    player.sendMessage(ChatColor.GREEN + "Configuration updated successfully!");
-                }
-            } catch (NumberFormatException e) {
-                player.sendMessage(ChatColor.RED + "Invalid input! Please enter a valid whole number.");
-            }
-
-            // Return the player back to the main configurations GUI menu panel
-            Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
-        }
     }
 }

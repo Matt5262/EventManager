@@ -55,7 +55,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            if (args.length < 1) {
+            if (args.length > 1) {
                 commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', invalidArgsMsg));
                 return true;
             }

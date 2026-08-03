@@ -24,16 +24,22 @@ public class SpawnFileManager {
         }
 
         spawnFile = new File(plugin.getDataFolder(), "spawn.yml");
+        boolean freshFile = false;
 
         if (!spawnFile.exists()) {
             try {
                 spawnFile.createNewFile();
-                populateDefaults();
+                freshFile = true;
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "Could not create spawn.yml!", e);
             }
         }
+
         spawnConfig = YamlConfiguration.loadConfiguration(spawnFile);
+
+        if (freshFile) {
+            populateDefaults();
+        }
     }
 
     public void reload() {

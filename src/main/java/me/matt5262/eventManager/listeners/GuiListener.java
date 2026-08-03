@@ -137,7 +137,7 @@ public class GuiListener implements Listener {
                 Material.CLOCK,
                 "&eSet Wait Time",
                 "set_wait_time",
-                "&fCurrent wait time: &6" + plugin.getConfig().getInt("wait-time") + "s."
+                "&fCurrent wait time: &6" + plugin.getSpawnFileManager().getData().getInt("wait-time") + "s."
         ));
 
         inv.setItem(15, ItemUtil.createGuiItem(
@@ -145,7 +145,7 @@ public class GuiListener implements Listener {
                 Material.BONE_MEAL,
                 "&eSet Delay",
                 "set_delay_time",
-                "&fCurrent delay time: &6" + plugin.getConfig().getInt("delay") + "s."
+                "&fCurrent delay time: &6" + plugin.getSpawnFileManager().getData().getInt("delay") + "s."
         ));
 
         inv.setItem(18, ItemUtil.createGuiItem(

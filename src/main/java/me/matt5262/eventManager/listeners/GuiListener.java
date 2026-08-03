@@ -227,6 +227,8 @@ public class GuiListener implements Listener {
                         break;
                     case "set_delay_time":
                         break;
+                    case "visual_item":
+                        break;
                     default:
                         plugin.getLogger().warning("No GUI action defined for tag: " + action);
                         break;

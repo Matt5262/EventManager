@@ -28,6 +28,7 @@ public class SpawnFileManager {
         if (!spawnFile.exists()) {
             try {
                 spawnFile.createNewFile();
+                populateDefaults();
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "Could not create spawn.yml!", e);
             }

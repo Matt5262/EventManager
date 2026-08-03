@@ -22,6 +22,7 @@ public class GuiListener implements Listener {
         this.plugin = plugin;
     }
 
+    // --- Reading Values ---
     private String getFormattedCoords(Location loc) {
         if (plugin.getSpawnFileManager().getData().getBoolean("use-precise-coordinates", false)) {
             return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());

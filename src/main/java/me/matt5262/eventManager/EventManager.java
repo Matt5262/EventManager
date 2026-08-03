@@ -14,6 +14,9 @@ public final class EventManager extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
+        this.spawnFileManager = new SpawnFileManager(this);
+        spawnFileManager.setup();
+
         guiListener = new GuiListener(this);
 
         SpawnCommand spawnCommand = new SpawnCommand(this);

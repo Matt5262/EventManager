@@ -5,22 +5,30 @@ import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SpawnCommand implements CommandExecutor, TabCompleter {
 
     private final EventManager plugin;
+    private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final Map<UUID, BukkitTask> pendingTeleports = new HashMap<>();
+
     public SpawnCommand(EventManager plugin) {
         this.plugin = plugin;
     }
@@ -40,6 +48,107 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         player.openInventory(inv);
     }
 
+    private Location loadSpawnLocation() {
+        FileConfiguration config = plugin.getSpawnFileManager().getData();
+        if (!config.contains("spawn.world")) return null;
+
+        String worldName = config.getString("spawn.world");
+        if (worldName == null || Bukkit.getWorld(worldName) == null) return null;
+
+        return new Location(
+                Bukkit.getWorld(worldName),
+                config.getDouble("spawn.x"),
+                config.getDouble("spawn.y"),
+                config.getDouble("spawn.z"),
+                (float) config.getDouble("spawn.yaw"),
+                (float) config.getDouble("spawn.pitch")
+        );
+    }
+
+    private void handleSpawnTeleport(Player player) {
+        Location spawnLoc = loadSpawnLocation();
+        if (spawnLoc == null) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cSpawn has not been set yet!"));
+            return;
+        }
+
+        UUID uuid = player.getUniqueId();
+        FileConfiguration data = plugin.getSpawnFileManager().getData();
+
+        // 1. Check Cooldown
+        int delaySeconds = data.getInt("delay", 15);
+        if (cooldowns.containsKey(uuid)) {
+            long secondsLeft = (cooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
+            if (secondsLeft > 0) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        "&cYou must wait " + secondsLeft + " second(s) before using /spawn again."));
+                return;
+            }
+        }
+
+        // 2. Warmup Execution
+        int waitTimeSeconds = data.getInt("wait-time", 5);
+
+        if (pendingTeleports.containsKey(uuid)) {
+            pendingTeleports.get(uuid).cancel();
+            pendingTeleports.remove(uuid);
+        }
+
+        if (waitTimeSeconds <= 0) {
+            executeTeleport(player, spawnLoc, delaySeconds);
+            return;
+        }
+
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                "&eTeleporting in " + waitTimeSeconds + " seconds... Do not move!"));
+
+        Location startLoc = player.getLocation().clone();
+
+        BukkitTask task = new BukkitRunnable() {
+            int secondsRemaining = waitTimeSeconds;
+
+            @Override
+            public void run() {
+                if (!player.isOnline()) {
+                    pendingTeleports.remove(uuid);
+                    cancel();
+                    return;
+                }
+
+                // Movement check (block coordinates only; allows head rotation)
+                Location currentLoc = player.getLocation();
+                if (currentLoc.getBlockX() != startLoc.getBlockX() ||
+                        currentLoc.getBlockY() != startLoc.getBlockY() ||
+                        currentLoc.getBlockZ() != startLoc.getBlockZ()) {
+
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cTeleportation cancelled because you moved!"));
+                    pendingTeleports.remove(uuid);
+                    cancel();
+                    return;
+                }
+
+                secondsRemaining--;
+
+                if (secondsRemaining <= 0) {
+                    executeTeleport(player, spawnLoc, delaySeconds);
+                    pendingTeleports.remove(uuid);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 20L);
+
+        pendingTeleports.put(uuid, task);
+    }
+
+    private void executeTeleport(Player player, Location targetLoc, int delaySeconds) {
+        player.teleport(targetLoc);
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aTeleported to spawn!"));
+
+        if (delaySeconds > 0) {
+            cooldowns.put(player.getUniqueId(), System.currentTimeMillis() + (delaySeconds * 1000L));
+        }
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         String noPermMsg = plugin.getConfig().getString("no-permission-message");
@@ -51,7 +160,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
             }
 
             if (args.length == 0) {
-                commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cUnfortunately this feature has yet to be implemented."));
+                handleSpawnTeleport(player);
                 return true;
             }
 

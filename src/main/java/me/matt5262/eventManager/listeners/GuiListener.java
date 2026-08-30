@@ -5,6 +5,7 @@ import me.matt5262.eventManager.commands.SpawnCommand;
 import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
 import org.bukkit.*;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -219,6 +220,47 @@ public class GuiListener implements Listener {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
 
                 switch (action) {
+                    case "confirm_set_spawn":
+                        Location loc = player.getLocation();
+                        FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
+
+                        boolean preciseCoords = spawnData.getBoolean("use-precise-coordinates", false);
+                        boolean preciseYaw = spawnData.getBoolean("use-precise-yaw", false);
+                        boolean precisePitch = spawnData.getBoolean("use-precise-pitch", false);
+
+                        // X, Y, Z handling
+                        double x = preciseCoords ? loc.getX() : loc.getBlockX() + 0.5;
+                        double y = preciseCoords ? loc.getY() : loc.getBlockY();
+                        double z = preciseCoords ? loc.getZ() : loc.getBlockZ() + 0.5;
+
+                        // Yaw handling (snap to 90-degree increments if not precise)
+                        float yaw = loc.getYaw();
+                        if (!preciseYaw) {
+                            long snapped = Math.round(yaw / 90.0) * 90;
+                            if (snapped == 270) snapped = -90;
+                            if (snapped == -270) snapped = 90;
+                            if (snapped == 360 || snapped == -360) snapped = 0;
+                            yaw = snapped;
+                        }
+
+                        // Pitch handling (snap to -90, 0, or 90 degrees if not precise)
+                        float pitch = loc.getPitch();
+                        if (!precisePitch) {
+                            pitch = Math.round(pitch / 90.0) * 90;
+                        }
+
+                        // Save location to spawn.yml
+                        spawnData.set("spawn.world", loc.getWorld().getName());
+                        spawnData.set("spawn.x", x);
+                        spawnData.set("spawn.y", y);
+                        spawnData.set("spawn.z", z);
+                        spawnData.set("spawn.yaw", yaw);
+                        spawnData.set("spawn.pitch", pitch);
+                        plugin.getSpawnFileManager().saveData();
+
+                        player.closeInventory();
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("spawn-set-message", "&aSpawn point set successfully!")));
+                        break;
                     case "set_spawn":
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             openSetSpawnConf(player);

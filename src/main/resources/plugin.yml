@@ -17,3 +17,6 @@ permissions:
   eventmanager.admin.spawn:
     description: Allows players to use the /spawn editor subcommand.
     default: op
+  eventmanager.spawn:
+    description: Allows players to use the /spawn command.
+    default: true

@@ -85,7 +85,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         Location spawnLoc = loadSpawnLocation();
         if (spawnLoc == null) {
             String msg = plugin.getConfig().getString("spawn-not-set-message", "&cSpawn has not been set yet!");
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+            sendActionBar(player, msg);
             return;
         }
 
@@ -97,9 +97,9 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         if (cooldowns.containsKey(uuid)) {
             long secondsLeft = (cooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
             if (secondsLeft > 0) {
-                String msg = plugin.getConfig().getString("spawn-cooldown-message", "&cYou must wait %seconds% second(s) before using /spawn again.");
+                String msg = plugin.getConfig().getString("spawn-cooldown-message", "&cTry again in %seconds% second(s).");
                 msg = msg.replace("%seconds%", String.valueOf(secondsLeft));
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+                sendActionBar(player, msg);
                 return;
             }
         }
@@ -138,7 +138,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                         player.getLocation().distanceSquared(startLoc) > thresholdSquared) {
 
                     String cancelMsg = plugin.getConfig().getString("spawn-moved-cancelled-message", "&cTeleportation cancelled because you moved!");
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMsg));
+                    sendActionBar(player, cancelMsg);
                     pendingTeleports.remove(uuid);
                     cancel();
                     return;
@@ -172,13 +172,28 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         player.teleport(targetLoc);
 
         String successMsg = plugin.getConfig().getString("spawn-teleport-success-message", "&aTeleported to spawn!");
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', successMsg));
+        sendActionBar(player, successMsg);
 
-        playConfigSound(player, "teleport-success-sound", "ENTITY_ENDERMAN_TELEPORT", 1.0f, 1.0f);
+        playConfigSound(player, "teleport-success-sound", "entity.enderman.teleport", 1.0f, 1.0f);
 
         if (delaySeconds > 0) {
             cooldowns.put(player.getUniqueId(), System.currentTimeMillis() + (delaySeconds * 1000L));
         }
+    }
+
+    private void handleDeleteSpawn(Player player) {
+        FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
+        if (!spawnData.contains("spawn.world")) {
+            String notSetMsg = plugin.getConfig().getString("spawn-not-set-message", "&cSpawn has not been set yet!");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', notSetMsg));
+            return;
+        }
+
+        spawnData.set("spawn", null);
+        plugin.getSpawnFileManager().saveData();
+
+        String deletedMsg = plugin.getConfig().getString("spawn-delete-message", "&aSpawn location deleted successfully!");
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', deletedMsg));
     }
 
     @Override
@@ -189,31 +204,43 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         if (!(commandSender instanceof Player player)) {
                 commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("commandsender-error")));
                 return true;
-            }
+        }
 
-            if (args.length == 0) {
-                handleSpawnTeleport(player);
-                return true;
-            }
+        if (!player.hasPermission("eventmanager.spawn")) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
+            return true;
+        }
 
-            if (args.length > 1) {
+        if (args.length == 0) {
+            handleSpawnTeleport(player);
+            return true;
+        }
+
+        if (args.length > 1) {
+            commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', invalidArgsMsg));
+            return true;
+        }
+
+        String subCommand = args[0].toLowerCase();
+        switch (subCommand) {
+            case "editor":
+                if (!player.hasPermission("eventmanager.admin.spawn")) {
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
+                    return true;
+                }
+                openSpawnMenu(player);
+                break;
+            case "delete":
+                if (!player.hasPermission("eventmanager.admin.spawn")) {
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
+                    return true;
+                }
+                handleDeleteSpawn(player);
+                break;
+            default:
                 commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', invalidArgsMsg));
-                return true;
-            }
-
-            String subCommand = args[0].toLowerCase();
-            switch (subCommand) {
-                case "editor":
-                    if (!player.hasPermission("eventmanager.admin.spawn")) {
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
-                        return true;
-                    }
-                    openSpawnMenu(player);
-                    break;
-                default:
-                    commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', invalidArgsMsg));
-                    break;
-            }
+                break;
+        }
         return true;
     }
 
@@ -224,6 +251,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             if (sender.hasPermission("eventmanager.admin.spawn")) {
                 suggestions.add("editor");
+                suggestions.add("delete");
             }
             String currentInput = args[0].toLowerCase();
             suggestions.removeIf(suggestion -> !suggestion.startsWith(currentInput));

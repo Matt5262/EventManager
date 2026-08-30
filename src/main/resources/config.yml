@@ -7,10 +7,11 @@ no-permission-message: "&cYou do not have permission to execute this command!"
 spawn-set-message: "&aSpawn point saved successfully!"
 commandsender-error: "&cOnly players can execute this command!"
 invalid-arguments-error: "&cInvalid argument(s)!"
+spawn-delete-message: "&aSpawn location deleted successfully!"
 
 # Spawn Teleport Messages & Sound Settings
 spawn-not-set-message: "&cSpawn has not been set yet!"
-spawn-cooldown-message: "&cYou must wait %seconds% second(s) before using /spawn again."
+spawn-cooldown-message: "&cTry again in %seconds% second(s)."
 spawn-moved-cancelled-message: "&cTeleportation cancelled because you moved!"
 spawn-teleport-success-message: "&aTeleported to spawn!"
 

@@ -155,12 +155,48 @@ public class GuiListener implements Listener {
                 "edit_set_spawn_back"
         ));
 
+        inv.setItem(5, ItemUtil.createGuiItem(
+                plugin,
+                Material.SPECTRAL_ARROW,
+                "&e+1 Second",
+                "increment_wait_time",
+                "&fIncrease the wait time by 1 second."
+        ));
+
+        inv.setItem(23, ItemUtil.createGuiItem(
+                plugin,
+                Material.SPECTRAL_ARROW,
+                "&e-1 Second",
+                "decrement_wait_time",
+                "&fDecrease the wait time by 1 second."
+        ));
+
+        inv.setItem(6, ItemUtil.createGuiItem(
+                plugin,
+                Material.SPECTRAL_ARROW,
+                "&e+1 Second",
+                "increment_delay_time",
+                "&fIncrease the delay time by 1 second."
+        ));
+
+        inv.setItem(24, ItemUtil.createGuiItem(
+                plugin,
+                Material.SPECTRAL_ARROW,
+                "&e-1 Second",
+                "decrement_delay_time",
+                "&fDecrease the delay time by 1 second."
+        ));
+
         player.openInventory(inv);
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Inventory clickedInventory = event.getClickedInventory();
+
+        int currentWaitTime = plugin.getSpawnFileManager().getData().getInt("wait-time", 5);
+        int currentDelayTime = plugin.getSpawnFileManager().getData().getInt("delay", 15);
+
         if (event.getView().getTopInventory().getHolder() instanceof SpawnMenuHolder) {
             event.setCancelled(true);
         }
@@ -226,6 +262,26 @@ public class GuiListener implements Listener {
                     case "set_delay_time":
                         break;
                     case "visual_item":
+                        break;
+                    case "increment_wait_time":
+                        plugin.getSpawnFileManager().getData().set("wait-time", currentWaitTime + 1);
+                        plugin.getSpawnFileManager().saveData();
+                        Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
+                        break;
+                    case "decrement_wait_time":
+                        plugin.getSpawnFileManager().getData().set("wait-time", Math.max(0, currentWaitTime - 1));
+                        plugin.getSpawnFileManager().saveData();
+                        Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
+                        break;
+                    case "increment_delay_time":
+                        plugin.getSpawnFileManager().getData().set("delay", currentDelayTime + 1);
+                        plugin.getSpawnFileManager().saveData();
+                        Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
+                        break;
+                    case "decrement_delay_time":
+                        plugin.getSpawnFileManager().getData().set("delay", Math.max(0, currentDelayTime - 1));
+                        plugin.getSpawnFileManager().saveData();
+                        Bukkit.getScheduler().runTask(plugin, () -> openEditSetSpawn(player));
                         break;
                     default:
                         plugin.getLogger().warning("No GUI action defined for tag: " + action);

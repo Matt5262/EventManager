@@ -62,7 +62,6 @@ public class SpawnFileManager {
     }
 
     private void populateDefaults() {
-        spawnConfig = YamlConfiguration.loadConfiguration(spawnFile);
         spawnConfig.set("use-precise-coordinates", plugin.getConfig().getBoolean("use-precise-coordinates", false));
         spawnConfig.set("use-precise-yaw", plugin.getConfig().getBoolean("use-precise-yaw", false));
         spawnConfig.set("use-precise-pitch", plugin.getConfig().getBoolean("use-precise-pitch", false));

@@ -23,7 +23,32 @@ public class GuiListener implements Listener {
         this.plugin = plugin;
     }
 
-    // --- Reading Values ---
+    public Location getTargetSpawnLocation(Player player) {
+        Location loc = player.getLocation();
+        FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
+
+        boolean preciseCoords = spawnData.getBoolean("use-precise-coordinates", false);
+        boolean preciseYaw = spawnData.getBoolean("use-precise-yaw", false);
+        boolean precisePitch = spawnData.getBoolean("use-precise-pitch", false);
+
+        double x = preciseCoords ? loc.getX() : loc.getBlockX() + 0.5;
+        double y = preciseCoords ? loc.getY() : loc.getBlockY();
+        double z = preciseCoords ? loc.getZ() : loc.getBlockZ() + 0.5;
+
+        float yaw = loc.getYaw();
+        if (!preciseYaw) {
+            long snapped = Math.round(yaw / 90.0) * 90;
+            if (snapped == 270) snapped = -90;
+            if (snapped == -270) snapped = 90;
+            if (snapped == 360 || snapped == -360) snapped = 0;
+            yaw = snapped;
+        }
+
+        float pitch = precisePitch ? loc.getPitch() : Math.round(loc.getPitch() / 90.0) * 90;
+
+        return new Location(loc.getWorld(), x, y, z, yaw, pitch);
+    }
+
     private String getFormattedCoords(Location loc) {
         if (plugin.getSpawnFileManager().getData().getBoolean("use-precise-coordinates", false)) {
             return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
@@ -221,45 +246,20 @@ public class GuiListener implements Listener {
 
                 switch (action) {
                     case "confirm_set_spawn":
-                        Location loc = player.getLocation();
+                        Location targetLoc = getTargetSpawnLocation(player);
                         FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
 
-                        boolean preciseCoords = spawnData.getBoolean("use-precise-coordinates", false);
-                        boolean preciseYaw = spawnData.getBoolean("use-precise-yaw", false);
-                        boolean precisePitch = spawnData.getBoolean("use-precise-pitch", false);
-
-                        // X, Y, Z handling
-                        double x = preciseCoords ? loc.getX() : loc.getBlockX() + 0.5;
-                        double y = preciseCoords ? loc.getY() : loc.getBlockY();
-                        double z = preciseCoords ? loc.getZ() : loc.getBlockZ() + 0.5;
-
-                        // Yaw handling (snap to 90-degree increments if not precise)
-                        float yaw = loc.getYaw();
-                        if (!preciseYaw) {
-                            long snapped = Math.round(yaw / 90.0) * 90;
-                            if (snapped == 270) snapped = -90;
-                            if (snapped == -270) snapped = 90;
-                            if (snapped == 360 || snapped == -360) snapped = 0;
-                            yaw = snapped;
-                        }
-
-                        // Pitch handling (snap to -90, 0, or 90 degrees if not precise)
-                        float pitch = loc.getPitch();
-                        if (!precisePitch) {
-                            pitch = Math.round(pitch / 90.0) * 90;
-                        }
-
-                        // Save location to spawn.yml
-                        spawnData.set("spawn.world", loc.getWorld().getName());
-                        spawnData.set("spawn.x", x);
-                        spawnData.set("spawn.y", y);
-                        spawnData.set("spawn.z", z);
-                        spawnData.set("spawn.yaw", yaw);
-                        spawnData.set("spawn.pitch", pitch);
+                        spawnData.set("spawn.world", targetLoc.getWorld().getName());
+                        spawnData.set("spawn.x", targetLoc.getX());
+                        spawnData.set("spawn.y", targetLoc.getY());
+                        spawnData.set("spawn.z", targetLoc.getZ());
+                        spawnData.set("spawn.yaw", targetLoc.getYaw());
+                        spawnData.set("spawn.pitch", targetLoc.getPitch());
                         plugin.getSpawnFileManager().saveData();
 
                         player.closeInventory();
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("spawn-set-message", "&aSpawn point set successfully!")));
+                        String setMsg = plugin.getConfig().getString("spawn-set-message", "&aSpawn point saved successfully!");
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', setMsg));
                         break;
                     case "set_spawn":
                         Bukkit.getScheduler().runTask(plugin, () -> {

@@ -3,10 +3,9 @@ package me.matt5262.eventManager.commands;
 import me.matt5262.eventManager.EventManager;
 import me.matt5262.eventManager.invHolders.SpawnMenuHolder;
 import me.matt5262.eventManager.utils.ItemUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -65,29 +64,48 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         );
     }
 
+    private void sendActionBar(Player player, String message) {
+        player.spigot().sendMessage(
+                ChatMessageType.ACTION_BAR,
+                TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', message))
+        );
+    }
+
+    private void playConfigSound(Player player, String configKey, String defaultSound, float volume, float pitch) {
+        String soundName = plugin.getConfig().getString(configKey, defaultSound);
+
+        if (soundName != null && !soundName.isBlank()) {
+            player.playSound(player.getLocation(), soundName.trim().toLowerCase(Locale.ROOT), volume, pitch);
+        } else {
+            plugin.getLogger().warning("Invalid sound specified in config for key '" + configKey + "': " + soundName);
+        }
+    }
+
     private void handleSpawnTeleport(Player player) {
         Location spawnLoc = loadSpawnLocation();
         if (spawnLoc == null) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cSpawn has not been set yet!"));
+            String msg = plugin.getConfig().getString("spawn-not-set-message", "&cSpawn has not been set yet!");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
             return;
         }
 
         UUID uuid = player.getUniqueId();
-        FileConfiguration data = plugin.getSpawnFileManager().getData();
+        FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
 
         // 1. Check Cooldown
-        int delaySeconds = data.getInt("delay", 15);
+        int delaySeconds = spawnData.getInt("delay", 15);
         if (cooldowns.containsKey(uuid)) {
             long secondsLeft = (cooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
             if (secondsLeft > 0) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        "&cYou must wait " + secondsLeft + " second(s) before using /spawn again."));
+                String msg = plugin.getConfig().getString("spawn-cooldown-message", "&cYou must wait %seconds% second(s) before using /spawn again.");
+                msg = msg.replace("%seconds%", String.valueOf(secondsLeft));
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
                 return;
             }
         }
 
         // 2. Warmup Execution
-        int waitTimeSeconds = data.getInt("wait-time", 5);
+        int waitTimeSeconds = spawnData.getInt("wait-time", 5);
 
         if (pendingTeleports.containsKey(uuid)) {
             pendingTeleports.get(uuid).cancel();
@@ -99,12 +117,12 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&eTeleporting in " + waitTimeSeconds + " seconds... Do not move!"));
-
         Location startLoc = player.getLocation().clone();
+        double threshold = plugin.getConfig().getDouble("movement-threshold-blocks", 1.0);
+        double thresholdSquared = threshold * threshold;
 
         BukkitTask task = new BukkitRunnable() {
+            int ticksElapsed = 0;
             int secondsRemaining = waitTimeSeconds;
 
             @Override
@@ -115,34 +133,48 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                // Movement check (block coordinates only; allows head rotation)
-                Location currentLoc = player.getLocation();
-                if (currentLoc.getBlockX() != startLoc.getBlockX() ||
-                        currentLoc.getBlockY() != startLoc.getBlockY() ||
-                        currentLoc.getBlockZ() != startLoc.getBlockZ()) {
+                // Movement Check (> 1 block away from initial point)
+                if (!player.getWorld().equals(startLoc.getWorld()) ||
+                        player.getLocation().distanceSquared(startLoc) > thresholdSquared) {
 
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cTeleportation cancelled because you moved!"));
+                    String cancelMsg = plugin.getConfig().getString("spawn-moved-cancelled-message", "&cTeleportation cancelled because you moved!");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMsg));
                     pendingTeleports.remove(uuid);
                     cancel();
                     return;
                 }
 
-                secondsRemaining--;
+                // Send action bar prompt continuously every tick
+                String actionBarTemplate = plugin.getConfig().getString("spawn-warmup-actionbar", "&fTeleporting in &b%seconds%&f seconds... Do not move!");
+                sendActionBar(player, actionBarTemplate.replace("%seconds%", String.valueOf(secondsRemaining)));
 
-                if (secondsRemaining <= 0) {
-                    executeTeleport(player, spawnLoc, delaySeconds);
-                    pendingTeleports.remove(uuid);
-                    cancel();
+                // Trigger tick sound and update timer every 20 ticks (1 second)
+                if (ticksElapsed % 20 == 0) {
+                    playConfigSound(player, "teleport-tick-sound", "block.note_block.hat", 1.0f, 1.0f);
+
+                    if (secondsRemaining <= 0) {
+                        executeTeleport(player, spawnLoc, delaySeconds);
+                        pendingTeleports.remove(uuid);
+                        cancel();
+                        return;
+                    }
+                    secondsRemaining--;
                 }
+
+                ticksElapsed++;
             }
-        }.runTaskTimer(plugin, 20L, 20L);
+        }.runTaskTimer(plugin, 0L, 1L);
 
         pendingTeleports.put(uuid, task);
     }
 
     private void executeTeleport(Player player, Location targetLoc, int delaySeconds) {
         player.teleport(targetLoc);
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aTeleported to spawn!"));
+
+        String successMsg = plugin.getConfig().getString("spawn-teleport-success-message", "&aTeleported to spawn!");
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', successMsg));
+
+        playConfigSound(player, "teleport-success-sound", "ENTITY_ENDERMAN_TELEPORT", 1.0f, 1.0f);
 
         if (delaySeconds > 0) {
             cooldowns.put(player.getUniqueId(), System.currentTimeMillis() + (delaySeconds * 1000L));

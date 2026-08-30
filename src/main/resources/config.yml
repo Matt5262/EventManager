@@ -4,9 +4,25 @@
 
 # Messages
 no-permission-message: "&cYou do not have permission to execute this command!"
-set-spawn-success: "&aSuccessfully set spawn!"
+spawn-set-message: "&aSpawn point saved successfully!"
 commandsender-error: "&cOnly players can execute this command!"
 invalid-arguments-error: "&cInvalid argument(s)!"
+
+# Spawn Teleport Messages & Sound Settings
+spawn-not-set-message: "&cSpawn has not been set yet!"
+spawn-cooldown-message: "&cYou must wait %seconds% second(s) before using /spawn again."
+spawn-moved-cancelled-message: "&cTeleportation cancelled because you moved!"
+spawn-teleport-success-message: "&aTeleported to spawn!"
+
+# Action Bar Text (%seconds% is replaced dynamically)
+spawn-warmup-actionbar: "&fTeleporting in &b%seconds%&f seconds... Do not move!"
+
+# Movement Tolerance (Distance in blocks a player can move before cancelling)
+movement-threshold-blocks: 1.0
+
+# Sounds (Bukkit Sound Enum Names)
+teleport-tick-sound: "BLOCK.NOTE_BLOCK.HAT"
+teleport-success-sound: "ENTITY.ENDERMAN.TELEPORT"
 
 # Set Spawn Defaults
 use-precise-coordinates: false

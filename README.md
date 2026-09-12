@@ -18,10 +18,9 @@ This is a highly configurable spawn plugin that allowes you to set a spawn that 
 - [ ] Merchant
 - [ ] Teams
 # 💾 Config v0.1.0
-
 ```
 # ==========================================
-# EventManager Configuration File
+# EventManager Configuration File v0.1.0
 # ==========================================
 
 # Messages

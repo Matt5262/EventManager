@@ -4,7 +4,7 @@
 This is a highly configurable spawn plugin that allowes you to set a spawn that you can tp to with the simple command: _**/spawn**_.
 # ✅ Features & Commands
 - Spawn
-  - This new spawn feature has come with more configurable stuff like precise or rounded up coordinates and rotations. A dedicated spawn editor is also included.
+  - This new spawn feature has come with more configurable stuff like precise or rounded up coordinates and rotations. A dedicated spawn editor to set the spawn is also included.
   - /spawn <editor | delete>
 # 🚨 Permissions
 - eventmanager.admin.spawn

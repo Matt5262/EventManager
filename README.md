@@ -1,7 +1,7 @@
 # 📩 Downloads
 [Download here](https://modrinth.com/plugin/)
 # 📖 What is this plugin?
-This is a highly configurable spawn plugin that allowes you to set a spawn that you can tp to with the simple command: _**/spawn**_.
+This is a highly configurable Minecraft event manager plugin that allows you to dynamically manage events, spawn points, and player interactions. It provides a user-friendly interface for setting up and controlling various aspects of your Minecraft server events.
 # ✅ Features & Commands
 - Spawn
   - This new spawn feature has come with more configurable stuff like precise or rounded up coordinates and rotations. A dedicated spawn editor to set the spawn is also included.

@@ -47,7 +47,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         player.openInventory(inv);
     }
 
-    private Location loadSpawnLocation() {
+    public Location loadSpawnLocation() {
         FileConfiguration config = plugin.getSpawnFileManager().getData();
         if (!config.contains("spawn.world")) return null;
 
@@ -92,7 +92,6 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
         UUID uuid = player.getUniqueId();
         FileConfiguration spawnData = plugin.getSpawnFileManager().getData();
 
-        // 1. Check Cooldown
         int delaySeconds = spawnData.getInt("delay", 15);
         if (cooldowns.containsKey(uuid)) {
             long secondsLeft = (cooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
@@ -104,7 +103,6 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        // 2. Warmup Execution
         int waitTimeSeconds = spawnData.getInt("wait-time", 5);
 
         if (pendingTeleports.containsKey(uuid)) {
@@ -133,7 +131,6 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                // Movement Check (> 1 block away from initial point)
                 if (!player.getWorld().equals(startLoc.getWorld()) ||
                         player.getLocation().distanceSquared(startLoc) > thresholdSquared) {
 
@@ -144,11 +141,9 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                // Send action bar prompt continuously every tick
                 String actionBarTemplate = plugin.getConfig().getString("spawn-warmup-actionbar", "&fTeleporting in &b%seconds%&f seconds... Do not move!");
                 sendActionBar(player, actionBarTemplate.replace("%seconds%", String.valueOf(secondsRemaining)));
 
-                // Trigger tick sound and update timer every 20 ticks (1 second)
                 if (ticksElapsed % 20 == 0) {
                     playConfigSound(player, "teleport-tick-sound", "block.note_block.hat", 1.0f, 1.0f);
 

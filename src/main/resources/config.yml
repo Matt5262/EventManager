@@ -8,8 +8,6 @@ spawn-set-message: "&aSpawn point saved successfully!"
 commandsender-error: "&cOnly players can execute this command!"
 invalid-arguments-error: "&cInvalid argument(s)!"
 spawn-delete-message: "&aSpawn location deleted successfully!"
-
-# Spawn Teleport Messages & Sound Settings
 spawn-not-set-message: "&cSpawn has not been set yet!"
 spawn-cooldown-message: "&cTry again in %seconds% second(s)."
 spawn-moved-cancelled-message: "&cTeleportation cancelled because you moved!"
@@ -21,7 +19,7 @@ spawn-warmup-actionbar: "&fTeleporting in &b%seconds%&f seconds... Do not move!"
 # Movement Tolerance (Distance in blocks a player can move before cancelling)
 movement-threshold-blocks: 1.0
 
-# Sounds (Bukkit Sound Enum Names)
+# Sounds (Bukkit Sounds)
 teleport-tick-sound: "BLOCK.NOTE_BLOCK.HAT"
 teleport-success-sound: "ENTITY.ENDERMAN.TELEPORT"
 
@@ -31,3 +29,6 @@ use-precise-yaw: false
 use-precise-pitch: false
 wait-time: 5
 delay: 15
+
+# Other
+ignore-bed-spawn: false

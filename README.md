@@ -20,7 +20,7 @@ This is a highly configurable Minecraft event manager plugin that allows you to 
 - [x] Custom death effects
 - [ ] Merchant
 - [ ] Teams
-# 💾 Config v0.1.0
+# 💾 Config
 ```
 # ==========================================
 # EventManager Configuration File v0.3.1

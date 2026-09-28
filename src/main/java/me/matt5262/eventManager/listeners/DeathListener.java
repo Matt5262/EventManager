@@ -44,19 +44,18 @@ public class DeathListener implements Listener {
                                     0.8f);
                         }
                     }
-
-                    if (!deathMessage.isEmpty() || deathMessage != null) {
-                        event.deathMessage(null);
-                        deathMessage = deathMessage.replace("%player%", player.getName());
-                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', deathMessage));
-                    }
-
-                    PlayerQuitListener.deathKickedPlayers.add(player.getUniqueId());
-
-                    player.kickPlayer(ChatColor.translateAlternateColorCodes('&', kickMessage));
-                    Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(), banMessage, null, "EventManager");
                 }
             }
+            if (!deathMessage.isEmpty() || deathMessage != null) {
+                event.deathMessage(null);
+                deathMessage = deathMessage.replace("%player%", player.getName());
+                Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', deathMessage));
+            }
+
+            PlayerQuitListener.deathKickedPlayers.add(player.getUniqueId());
+
+            player.kickPlayer(ChatColor.translateAlternateColorCodes('&', kickMessage));
+            Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(), banMessage, null, "EventManager");
         }
     }
 }

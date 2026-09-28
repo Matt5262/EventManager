@@ -6,21 +6,24 @@ This is a highly configurable Minecraft event manager plugin that allows you to 
 - Spawn
   - This new spawn feature has come with more configurable stuff like precise or rounded up coordinates and rotations. A dedicated spawn editor to set the spawn is also included.
   - /spawn <editor | delete>
+- Deathban
+  - This feature can be used to ban players with custom effects automatically when they die.
 # 🚨 Permissions
 - eventmanager.admin.spawn
 - eventmanager.spawn
+- eventmanager.deathban.bypass
 # 🗓️ Coming Soon...
 - [ ] Freeze players
 - [ ] Announce a message
 - [x] Set a spawn
 - [ ] Scattered Spawnpoints
-- [ ] Custom death effects
+- [x] Custom death effects
 - [ ] Merchant
 - [ ] Teams
 # 💾 Config v0.1.0
 ```
 # ==========================================
-# EventManager Configuration File v0.1.0
+# EventManager Configuration File v0.3.1
 # ==========================================
 
 # Messages
@@ -51,7 +54,17 @@ use-precise-pitch: false
 wait-time: 5
 delay: 15
 
+# Deathban settings
+# Leave deathban-announcement empty to disable it.
+custom-death-effects: true
+deathban-announcement: "&c💀 %player% has been killed."
+deathban-kick-message: "&cYou have died."
+deathban-message: "You are dead."
+
 # Other
+# Leave messages empty to use vanilla messages.
 ignore-bed-spawn: false
+join-message: "&e%player% has joined the server."
+quit-message: "&e%player% has left the server."
 ```
 

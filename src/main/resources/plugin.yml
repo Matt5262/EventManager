@@ -20,3 +20,6 @@ permissions:
   eventmanager.spawn:
     description: Allows players to use the /spawn command.
     default: true
+  eventmanager.deathban.bypass:
+    description: Allows players to bypass deathban.
+    default: op

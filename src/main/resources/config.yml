@@ -1,5 +1,5 @@
 # ==========================================
-# EventManager Configuration File v0.1.0
+# EventManager Configuration File v0.2.0
 # ==========================================
 
 # Messages
@@ -30,5 +30,15 @@ use-precise-pitch: false
 wait-time: 5
 delay: 15
 
+# Deathban settings
+# Leave deathban-announcement empty to disable it.
+custom-death-effects: true
+deathban-announcement: "&c💀 %player% has been killed."
+deathban-kick-message: "&cYou have died."
+deathban-message: "You are dead."
+
 # Other
+# Leave messages empty to use vanilla messages.
 ignore-bed-spawn: false
+join-message: "&e%player% has joined the server."
+quit-message: "&e%player% has left the server."

@@ -1,9 +1,7 @@
 package me.matt5262.eventManager;
 
 import me.matt5262.eventManager.commands.SpawnCommand;
-import me.matt5262.eventManager.listeners.PlayerLogger;
-import me.matt5262.eventManager.listeners.GuiListener;
-import me.matt5262.eventManager.listeners.PlayerSpawnListener;
+import me.matt5262.eventManager.listeners.*;
 import me.matt5262.eventManager.utils.LogManager;
 import me.matt5262.eventManager.utils.SpawnFileManager;
 import org.bukkit.Bukkit;
@@ -41,6 +39,9 @@ public final class EventManager extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerLogger(logManager), this);
 
         Bukkit.getConsoleSender().sendMessage("[EventManager] "+ ChatColor.GREEN + "Logger enabled and logging events!");
+
+        getServer().getPluginManager().registerEvents(new DeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
     }
 
     public SpawnFileManager getSpawnFileManager() {

@@ -1,9 +1,13 @@
 package me.matt5262.eventManager;
 
 import me.matt5262.eventManager.commands.SpawnCommand;
+import me.matt5262.eventManager.listeners.PlayerLogger;
 import me.matt5262.eventManager.listeners.GuiListener;
 import me.matt5262.eventManager.listeners.PlayerSpawnListener;
+import me.matt5262.eventManager.utils.LogManager;
 import me.matt5262.eventManager.utils.SpawnFileManager;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EventManager extends JavaPlugin {
@@ -12,6 +16,8 @@ public final class EventManager extends JavaPlugin {
     private PlayerSpawnListener playerSpawnListener;
     private SpawnFileManager spawnFileManager;
     public SpawnCommand spawnCommand;
+    // Reference to the LogManager class
+    private LogManager logManager;
 
     @Override
     public void onEnable() {
@@ -29,6 +35,12 @@ public final class EventManager extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(playerSpawnListener, this);
 
+        // When the plugin is enabled, it will create a new LogManager object and pass this plugin to it
+        this.logManager = new LogManager(this);
+        // Register the EventListener class to listen for events and pass the logManager to it and pass this plugin to EventListener
+        getServer().getPluginManager().registerEvents(new PlayerLogger(logManager), this);
+
+        Bukkit.getConsoleSender().sendMessage("[EventManager] "+ ChatColor.GREEN + "Logger enabled and logging events!");
     }
 
     public SpawnFileManager getSpawnFileManager() {

@@ -2,7 +2,7 @@ name: EventManager
 version: '${version}'
 
 main: me.matt5262.eventManager.EventManager
-api-version: '26.2'
+api-version: '26.3'
 load: POSTWORLD
 
 authors: [Matt_5262]
